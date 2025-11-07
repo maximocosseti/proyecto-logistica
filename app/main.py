@@ -18,6 +18,7 @@ app = FastAPI(
 # En nuestro caso, solo la app de React en el puerto 5173
 origins = [
     "http://localhost:5173",
+    "httpsS://frontend-dashboard.vercel.app" # <-- ¡AÑADE ESTA LÍNEA!
 ]
 
 # --- 3. Añade el Middleware a la app ---
