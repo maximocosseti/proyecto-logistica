@@ -21,13 +21,12 @@ origins = [
     "https://logistica-dashboard-react-kzi2i29v2-thomas-projects-6307dabf.vercel.app"
 ]
 
-# --- 3. Añade el Middleware a la app ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,       # Permite estos orígenes
-    allow_credentials=True,      # Permite cookies/tokens
-    allow_methods=["*"],         # Permite todos los métodos (GET, POST, etc.)
-    allow_headers=["*"],         # Permite todos los headers (incluyendo Authorization)
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
