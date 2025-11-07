@@ -6,7 +6,7 @@ La funcionalidad principal es un **motor de validación "inteligente"** que simu
 
 ---
 
-## 📋 Características Principales
+## Características Principales
 
 * **Autenticación Segura:** Endpoints protegidos usando `OAuth2PasswordBearer` y tokens **JWT**.
 * **Hashing de Contraseñas:** `Passlib` (con `sha256_crypt`) para almacenar contraseñas de forma segura.
