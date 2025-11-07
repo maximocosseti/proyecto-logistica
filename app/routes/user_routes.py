@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, status, Body
+from fastapi import APIRouter, HTTPException, status, Body, Depends
 from typing import List
-from datetime import datetime, timezone # <-- 1. Importamos datetime
+from datetime import datetime, timezone 
 
 # Importamos el ESQUEMA (lo que entra y sale de la API)
 from app.schemas.user_schema import UserCreate, UserOut
@@ -12,8 +12,6 @@ from app.core.security import get_password_hash
 from app.config.database import collection_user
 
 from app.core.security import get_current_user
-
-from fastapi import Depends
 
 # (Ya no importamos UserModel, es lo que está fallando)
 
@@ -28,7 +26,6 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Registrar un nuevo usuario"
 )
-
 async def create_user(user: UserCreate = Body(...)):
     """
     Crea un nuevo usuario en la base de datos.
@@ -46,9 +43,6 @@ async def create_user(user: UserCreate = Body(...)):
     hashed_password = get_password_hash(user.password)
     
     # 3. Crear el documento para la BBDD (MODO MANUAL)
-    # ------------------------------------------------------------------
-    # --- ESTA ES LA SOLUCIÓN ---
-    # En lugar de usar UserModel (que falla), creamos un dict simple.
     new_user_dict = {
         "email": user.email,
         "full_name": user.full_name,
@@ -57,19 +51,16 @@ async def create_user(user: UserCreate = Body(...)):
         "hashed_password": hashed_password,
         "created_at": datetime.now(timezone.utc) # Añadimos la fecha manualmente
     }
-    # ------------------------------------------------------------------
     
     # 4. Insertar en la base de datos
     insert_result = await collection_user.insert_one(new_user_dict)
     
     # 5. Devolver el usuario recién creado
-    # Lo buscamos por su nuevo ID para devolver el documento completo
     created_user = await collection_user.find_one(
         {"_id": insert_result.inserted_id}
     )
     if created_user:
         created_user["id"] = str(created_user["_id"])
-    # FastAPI usará UserOut para filtrar la respuesta (esto sí funciona)
     return created_user
 
 
@@ -80,17 +71,44 @@ async def create_user(user: UserCreate = Body(...)):
     summary="Obtener los datos del usuario actual"
 )
 async def read_users_me(
-    # Aquí FastAPI "inyecta" al usuario validado
     current_user: dict = Depends(get_current_user)
 ):
     """
     Devuelve los detalles del usuario que está autenticado (logueado).
-    Necesita un token JWT válido en la cabecera 'Authorization: Bearer {token}'.
     """
     
-    # El 'current_user' que recibimos es un dict de la BBDD.
-    # Tenemos que añadirle el campo 'id' (string) para que
-    # 'UserOut' (response_model) pueda validarlo.
     current_user["id"] = str(current_user["_id"])
     
     return current_user
+
+# --- ¡NUEVO ENDPOINT AÑADIDO! ---
+@router.get(
+    "/",
+    response_model=List[UserOut], # Devuelve una LISTA de usuarios
+    summary="Obtener lista de todos los usuarios (Solo Admins)"
+)
+async def get_all_users(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Devuelve una lista de todos los usuarios.
+    - **Solo los usuarios con rol 'admin' pueden usar esto.**
+    """
+    
+    # 1. Verificar Permisos de Admin
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para ver esta información."
+        )
+        
+    # 2. Buscar todos los usuarios
+    users_cursor = collection_user.find()
+    
+    users_list = []
+    async for user in users_cursor:
+        # Convertimos el _id a id para el schema UserOut
+        user["id"] = str(user["_id"])
+        users_list.append(user)
+        
+    return users_list

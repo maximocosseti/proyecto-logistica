@@ -20,3 +20,10 @@ class RouteOut(RouteBase):
     model_config = ConfigDict(
         from_attributes = True
     )
+
+# --- ¡NUEVA CLASE AÑADIDA! ---
+class RouteAssign(BaseModel):
+    """
+    Schema para recibir el ID del nuevo dueño de la ruta.
+    """
+    new_owner_id: str
