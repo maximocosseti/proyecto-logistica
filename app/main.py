@@ -18,16 +18,15 @@ app = FastAPI(
 # En nuestro caso, solo la app de React en el puerto 5173
 origins = [
     "http://localhost:5173",
-    https://logistica-dashboard-react-8m4wh0ltc-thomas-projects.vercel.app # <-- ¡AÑADE ESTA LÍNEA!
+    "https://logistica-dashboard-react-8m4wh0ltc-thomas-projects.vercel.app" # <-- ¡CON COMILLAS!
 ]
 
-# --- 3. Añade el Middleware a la app ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,       # Permite estos orígenes
-    allow_credentials=True,      # Permite cookies/tokens
-    allow_methods=["*"],         # Permite todos los métodos (GET, POST, etc.)
-    allow_headers=["*"],         # Permite todos los headers (incluyendo Authorization)
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
