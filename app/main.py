@@ -14,6 +14,7 @@ app = FastAPI(
 
 origins = [
     "http://localhost:5173",
+    "https://logistica-dashboard-react.vercel.app",
     "https://logistica-dashboard-react-kzi2i29v2-thomas-projects-6307dabf.vercel.app",
     "https://logistica-dashboard-react-qhs3px783-thomas-projects-6307dabf.vercel.app"
 ]
