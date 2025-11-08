@@ -90,6 +90,8 @@ async def create_stop_for_route(
     return created_stop
 
 # --- Endpoint GET (Donde estaba el error) ---
+# (En app/routes/stop_routes.py)
+
 @router.get(
     "/routes/{route_id}/stops",
     response_model=List[StopOut],
@@ -104,32 +106,49 @@ async def get_stops_for_route(
     las enriquece con el estado de validación (Rojo/Amarillo/Verde).
     """
     
-    # 1. Validar ruta (igual que antes)
+    # --- ¡NUEVO BLOQUE DE DEBUG! ---
+    print("\n" + "="*30)
+    print(f"--- DEBUG: GET /routes/{route_id}/stops ---")
+    
+    # 1. Validar ruta
+    route_object_id = None
+    route = None
     try:
         route_object_id = ObjectId(route_id)
+        print(f"--- DEBUG: Buscando Ruta con ObjectId: {route_object_id}")
         route = await collection_route.find_one({"_id": route_object_id})
-    except Exception:
+    except Exception as e:
+        print(f"--- DEBUG: ERROR al convertir ObjectId: {e}")
         raise HTTPException(status_code=400, detail="ID de Ruta inválido")
         
     if not route:
+        print(f"--- DEBUG: ¡FALLO 404! No se encontró la ruta en la BBDD.")
+        print("="*30 + "\n")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No se encontró la ruta con ID {route_id}"
         )
-        
-    # --- 2. VERIFICACIÓN DE PERMISOS (CORREGIDA) ---
-    # Usamos .get() para evitar KeyErrors si el campo no existe
+    
+    print(f"--- DEBUG: Ruta encontrada: {route.get('name')}")
+    
+    # 2. Verificar Permisos
     is_repartidor = current_user.get("role") == "repartidor"
     route_owner_id = route.get("owner_id")
     user_id = current_user.get("_id")
+    print(f"--- DEBUG: Rol de usuario: {current_user.get('role')}")
+    print(f"--- DEBUG: Owner de la ruta: {route_owner_id}")
+    print(f"--- DEBUG: ID de usuario: {user_id}")
 
     if (is_repartidor and route_owner_id != user_id):
+        print(f"--- DEBUG: ¡FALLO 403! Permisos denegados.")
+        print("="*30 + "\n")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permisos para ver esta ruta."
         )
-    # -----------------------------------------------
-        
+    
+    print("--- DEBUG: Permisos OK. Buscando paradas...")
+    
     # 3. BUSCAR, VALIDAR Y CONSTRUIR LA RESPUESTA
     stops_cursor = collection_stop.find({"route_id": route_object_id})
     validated_stops_list = []
@@ -140,6 +159,8 @@ async def get_stops_for_route(
         validated_stop["route_id"] = str(validated_stop["route_id"])
         validated_stops_list.append(validated_stop)
         
+    print(f"--- DEBUG: Encontradas {len(validated_stops_list)} paradas.")
+    print("="*30 + "\n")
     return validated_stops_list
 
 # (Al final de app/routes/stop_routes.py, 
